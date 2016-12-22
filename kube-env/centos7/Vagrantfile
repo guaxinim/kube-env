@@ -1,0 +1,103 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  kubectl = "./config-files/kubernetes/kubectl"
+  hostsfile = "./config-files/hosts"
+  repofile = "./config-files/virt7-docker-common-release.repo"
+
+  config.vm.define "kb0" do |kb0|
+    #kb0.vm.hostname = "centos-master"
+    kb0.vm.box = "centos/7"
+    # network
+    kb0.vm.network "private_network", ip: "192.168.33.10"
+    # installs
+    kb0.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
+    kb0.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+    kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
+    kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb0.vm.provision "shell", inline: "sudo yum update -y"
+    kb0.vm.provision "shell", inline: "sudo yum install -y ntpdate"
+    kb0.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
+    kb0.vm.provision "shell", inline: "sudo yum install -y etcd"
+    # kubernetes config
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_MASTER/c\KUBE_MASTER=\"--master=http://centos-master:8080\"' /etc/kubernetes/config"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_ETCD_SERVERS/c\KUBE_ETCD_SERVERS=\"--etcd-servers=http://centos-master:2379\"' /etc/kubernetes/config"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/ETCD_LISTEN_CLIENT_URLS/c\ETCD_LISTEN_CLIENT_URLS=\"http://0.0.0.0:2379\"' /etc/etcd/etcd.conf"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/ETCD_ADVERTISE_CLIENT_URLS/c\ETCD_ADVERTISE_CLIENT_URLS=\"http://0.0.0.0:2379\"' /etc/etcd/etcd.conf"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_API_ADDRESS/c\KUBE_API_ADDRESS=\"--address=0.0.0.0\"' /etc/kubernetes/apiserver"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_API_PORT/c\KUBE_API_PORT=\"--port=8080\"' /etc/kubernetes/apiserver"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBELET_PORT/c\KUBELET_PORT=\"--kubelet-port=10250\"' /etc/kubernetes/apiserver"
+    #kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_SERVICE_ADDRESSES/c\KUBE_SERVICE_ADDRESSES=\"--service-cluster-ip-range=10.254.0.0/16\"' /etc/kubernetes/apiserver"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/KUBE_ADMISSION_CONTROL/c\#KUBE_ADMISSION_CONTROL=\"--admission-control=NamespaceLifecycle,NamespaceExists,LimitRanger,SecurityContextDeny,ServiceAccount,ResourceQuota\"' /etc/kubernetes/apiserver"
+    # services
+    kb0.vm.provision "shell", inline: "sudo systemctl enable etcd kube-apiserver kube-controller-manager kube-scheduler"
+    kb0.vm.provision "shell", inline: "sudo systemctl start etcd kube-apiserver kube-controller-manager kube-scheduler"
+    #
+    # alternative way - copy of kubectl
+    # kb0.vm.provision :file, :source => kubectl, :destination => "/home/vagrant/kubectl"
+    # kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/kubectl /usr/local/bin/kubectl"
+    # kb0.vm.provision "shell", inline: "sudo chmod +x /usr/local/bin/kubectl"
+  end
+
+  config.vm.define "kb1" do |kb1|
+    #kb1.vm.hostname = "centos-minion1"
+    kb1.vm.box = "centos/7"
+    # network
+    kb1.vm.network "private_network", ip: "192.168.33.11"
+    # installs
+    kb1.vm.provision :file, :source => kubectl, :destination => "/home/vagrant/kubectl"
+    kb1.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
+    kb1.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+    kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
+    kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb1.vm.provision "shell", inline: "sudo yum update -y"
+    kb1.vm.provision "shell", inline: "sudo yum install -y ntpdate"
+    kb1.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
+    kb1.vm.provision "shell", inline: "sudo systemctl enable etcd kube-apiserver kube-controller-manager kube-scheduler"
+    kb1.vm.provision "shell", inline: "sudo systemctl start etcd kube-apiserver kube-controller-manager kube-scheduler"
+    #kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/kubectl /usr/local/bin/kubectl"
+    #kb1.vm.provision "shell", inline: "sudo chmod +x /usr/local/bin/kubectl"
+  end
+
+  config.vm.define "kb2" do |kb2|
+    #kb2.vm.hostname = "centos-minion2"
+    kb2.vm.box = "centos/7"
+    # network
+    kb2.vm.network "private_network", ip: "192.168.33.12"
+    # installs
+    kb2.vm.provision :file, :source => kubectl, :destination => "/home/vagrant/kubectl"
+    kb2.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
+    kb2.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+    kb2.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
+    kb2.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb2.vm.provision "shell", inline: "sudo yum update -y"
+    kb2.vm.provision "shell", inline: "sudo yum install -y ntpdate"
+    kb2.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
+    kb2.vm.provision "shell", inline: "sudo systemctl enable etcd kube-apiserver kube-controller-manager kube-scheduler"
+    kb2.vm.provision "shell", inline: "sudo systemctl start etcd kube-apiserver kube-controller-manager kube-scheduler"
+    #kb2.vm.provision "shell", inline: "sudo mv /home/vagrant/kubectl /usr/local/bin/kubectl"
+    #kb2.vm.provision "shell", inline: "sudo chmod +x /usr/local/bin/kubectl"
+  end
+
+  config.vm.define "kb3" do |kb3|
+    #kb3.vm.hostname = "centos-minion3"
+    kb3.vm.box = "centos/7"
+    # network
+    kb3.vm.network "private_network", ip: "192.168.33.13"
+    # installs
+    kb3.vm.provision :file, :source => kubectl, :destination => "/home/vagrant/kubectl"
+    kb3.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
+    kb3.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+    kb3.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
+    kb3.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb3.vm.provision "shell", inline: "sudo yum update -y"
+    kb3.vm.provision "shell", inline: "sudo yum install -y ntpdate"
+    kb3.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
+    kb3.vm.provision "shell", inline: "sudo systemctl enable etcd kube-apiserver kube-controller-manager kube-scheduler"
+    kb3.vm.provision "shell", inline: "sudo systemctl start etcd kube-apiserver kube-controller-manager kube-scheduler"
+    #kb3.vm.provision "shell", inline: "sudo mv /home/vagrant/kubectl /usr/local/bin/kubectl"
+    #kb3.vm.provision "shell", inline: "sudo chmod +x /usr/local/bin/kubectl"
+  end
+
+end
