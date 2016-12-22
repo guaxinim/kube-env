@@ -1,6 +1,6 @@
 # kube-env
 
-This is a project that creates a kubernetes environment for DevOps using Vagrant
+This is a project that creates a kubernetes environment for DevOps using Vagrant  
 Hosts Description:
 
 |Host     |Description        |
