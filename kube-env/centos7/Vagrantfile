@@ -6,20 +6,33 @@ Vagrant.configure(2) do |config|
   hostsfile = "./config-files/hosts"
   repofile = "./config-files/virt7-docker-common-release.repo"
 
+  config.vm.synced_folder "./data", "/vagrant"
+  #if Vagrant.has_plugin? "vagrant-vbguest"
+  #  config.vbguest.no_install  = true
+  #  config.vbguest.auto_update = false
+  #  config.vbguest.no_remote   = true
+  #end
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.scope = :box
+    config.cache.enable :yum
+    config.cache.synced_folder_opts = {
+      type: :nfs,
+      mount_options: ['rw', 'vers=3', 'tcp', 'nolock']
+    }
   end
 
   config.vm.define "kb0" do |kb0|
     #kb0.vm.hostname = "centos-master"
     kb0.vm.box = "centos/7"
     # network
-    kb0.vm.network "private_network", ip: "192.168.32.10"
+    kb0.vm.network "private_network", ip: "10.0.2.10"
     # installs
     kb0.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
     kb0.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
     kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
     kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/cachedir/c\cachedir=/vagrant/tmp/yum/$basearch/$releasever' /etc/yum.conf"
+    kb0.vm.provision "shell", inline: "sudo sed -i '/keepcache/c\keepcache=1' /etc/yum.conf"
     kb0.vm.provision "shell", inline: "sudo yum update -y"
     kb0.vm.provision "shell", inline: "sudo yum install -y ntpdate"
     kb0.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
@@ -48,26 +61,27 @@ Vagrant.configure(2) do |config|
     #kb1.vm.hostname = "centos-minion1"
     kb1.vm.box = "centos/7"
     # network
-    kb1.vm.network "private_network", ip: "192.168.32.11"
+    kb1.vm.network "private_network", ip: "10.0.2.2"
     # installs
-    kb1.vm.provision :file, :source => kubectl, :destination => "/home/vagrant/kubectl"
-    kb1.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
-    kb1.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
-    kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
-    kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
-    kb1.vm.provision "shell", inline: "sudo yum update -y"
-    kb1.vm.provision "shell", inline: "sudo yum install -y ntpdate"
-    kb1.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
-    kb1.vm.provision "shell", inline: "sudo yum install -y etcd"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBE_MASTER/c\KUBE_MASTER=\"--master=http://centos-master:8080\"' /etc/kubernetes/config"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBE_ETCD_SERVERS/c\KUBE_ETCD_SERVERS=\"--etcd-servers=http://centos-master:2379\"' /etc/kubernetes/config"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_ADDRESS/c\KUBELET_ADDRESS=\"--address=0.0.0.0\"' /etc/kubernetes/kubelet"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_PORT/c\KUBELET_PORT=\"--kubelet-port=10250\"' /etc/kubernetes/kubelet"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_HOSTNAME/c\KUBELET_HOSTNAME=\"--hostname-override=centos-minion1\"' /etc/kubernetes/kubelet"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_API_SERVER/c\KUBELET_API_SERVER=\"--api-servers=http://centos-master:8080\"' /etc/kubernetes/kubelet"
-    kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_POD_INFRA_CONTAINER/c\#KUBELET_POD_INFRA_CONTAINER=\"--pod-infra-container-image=registry.access.redhat.com/rhel7/pod-infrastructure:latest\"' /etc/kubernetes/kubelet"
-    kb1.vm.provision "shell", inline: "sudo systemctl enable etcd kube-proxy kubelet docker"
-    kb1.vm.provision "shell", inline: "sudo systemctl start etcd kube-proxy kubelet docker"
+   # kb1.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
+   # kb1.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+   # kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
+   # kb1.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
+    kb1.vm.provision "shell", inline: "sudo sed -i '/cachedir/c\cachedir=/vagrant/tmp/yum/$basearch/$releasever' /etc/yum.conf"
+    kb1.vm.provision "shell", inline: "sudo sed -i '/keepcache/c\keepcache=1' /etc/yum.conf"
+   # kb1.vm.provision "shell", inline: "sudo yum update -y"
+   # kb1.vm.provision "shell", inline: "sudo yum install -y ntpdate"
+   # kb1.vm.provision "shell", inline: "sudo yum install -y --enablerepo=virt7-docker-common-release kubernetes docker"
+   # kb1.vm.provision "shell", inline: "sudo yum install -y etcd"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBE_MASTER/c\KUBE_MASTER=\"--master=http://centos-master:8080\"' /etc/kubernetes/config"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBE_ETCD_SERVERS/c\KUBE_ETCD_SERVERS=\"--etcd-servers=http://centos-master:2379\"' /etc/kubernetes/config"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_ADDRESS/c\KUBELET_ADDRESS=\"--address=0.0.0.0\"' /etc/kubernetes/kubelet"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_PORT/c\KUBELET_PORT=\"--kubelet-port=10250\"' /etc/kubernetes/kubelet"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_HOSTNAME/c\KUBELET_HOSTNAME=\"--hostname-override=centos-minion1\"' /etc/kubernetes/kubelet"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_API_SERVER/c\KUBELET_API_SERVER=\"--api-servers=http://centos-master:8080\"' /etc/kubernetes/kubelet"
+   # kb1.vm.provision "shell", inline: "sudo sed -i '/KUBELET_POD_INFRA_CONTAINER/c\#KUBELET_POD_INFRA_CONTAINER=\"--pod-infra-container-image=registry.access.redhat.com/rhel7/pod-infrastructure:latest\"' /etc/kubernetes/kubelet"
+    #kb1.vm.provision "shell", inline: "sudo systemctl enable etcd kube-proxy kubelet docker"
+    #kb1.vm.provision "shell", inline: "sudo systemctl start etcd kube-proxy kubelet docker"
   end
 
   config.vm.define "kb2" do |kb2|
