@@ -12,8 +12,10 @@ Hosts Description:
 
 This environment is using Vagrant to provision the kubernentes environment. In order to continue you have to [install Vagrant](https://www.vagrantup.com/docs/installation/).
 
-Usage:  
-	git clone https://github.com/guaxinim/kube-env  
-	vagrant up  
+Usage:
+```bash  
+git clone https://github.com/guaxinim/kube-env  
+vagrant up
+```  
 
 
