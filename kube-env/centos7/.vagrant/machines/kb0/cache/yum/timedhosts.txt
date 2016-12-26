@@ -1,0 +1,12 @@
+mirror.gtdinternet.com 1.09771990776
+centos.brnet.net.br 0.821460008621
+centos.xpg.com.br 0.787832975388
+mirrors.uprm.edu 99999999999
+centos.brisanet.com.br 1.14030790329
+mirror.nbtelecom.com.br 0.70051908493
+mirror.ufscar.br 0.817579030991
+mirror.facom.ufms.br 0.838595151901
+mirror.orbyta.com 1.21153402328
+mirror.ci.ifes.edu.br 0.712606906891
+centos.ufes.br 1.011687994
+mirror.globo.com 0.917701005936
