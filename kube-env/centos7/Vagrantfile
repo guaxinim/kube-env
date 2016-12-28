@@ -3,10 +3,12 @@
 
 ##### Global Config
 Vagrant.configure(2) do |config|
-  kubectl = "./config-files/kubernetes/kubectl"
-  hostsfile = "./config-files/hosts"
-  repofile = "./config-files/virt7-docker-common-release.repo"
-  nginx = "./config-files/kubernetes/nginx.yaml"
+  kubectl = "config-files/kubernetes/kubectl"
+  hostsfile = "config-files/hosts"
+  repofile = "config-files/virt7-docker-common-release.repo"
+  nginx = "config-files/kubernetes/nginx.yaml"
+
+  config.vm.network "forwarded_port", guest: 80, host: 8080, auto_correct: true
 
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
   if Vagrant.has_plugin? "vagrant-vbguest"
@@ -43,6 +45,7 @@ Vagrant.configure(2) do |config|
     # installs
     kb0.vm.provision :file, :source => hostsfile, :destination => "/home/vagrant/hosts"
     kb0.vm.provision :file, :source => repofile, :destination => "/home/vagrant/virt7-docker-common-release.repo"
+    kb0.vm.provision :file, :source => nginx, :destination => "/home/vagrant/nginx.yaml"
     kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/hosts /etc/hosts"
     kb0.vm.provision "shell", inline: "sudo mv /home/vagrant/virt7-docker-common-release.repo /etc/yum.repos.d/virt7-docker-common-release.repo"
     kb0.vm.provision "shell", inline: "sudo sed -i '/cachedir/c\cachedir=/vagrant/tmp/yum/$basearch/$releasever' /etc/yum.conf"
@@ -72,9 +75,7 @@ Vagrant.configure(2) do |config|
     kb0.vm.provision "shell", inline: "sudo systemctl disable iptables-service firewalld"
     kb0.vm.provision "shell", inline: "sudo systemctl stop iptables-service firewalld"
     # cluster config
-    kb0.vm.provision "shell", inline: "mkdir /home/vagrant/builds"
-    kb0.vm.provision :file, :source => nginx, :destination => "/home/vagrant/builds/nginx.yaml"
-    kb0.vm.provision "shell", inline: "kubectl create -f ./nginx.yaml"
+    kb0.vm.provision "shell", inline: "kubectl create -f /home/vagrant/nginx.yaml"
   end
 
   config.vm.define "kb1" do |kb1|
